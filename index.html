@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="de" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AES Verschlüsselung Einfach Erklärt</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Fira+Code:wght@400;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome für Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        darkbg: '#0a0b10',
+                        cardbg: '#161822',
+                        neon: '#00ff00',
+                        cyber: '#00e5ff',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['Fira Code', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body { background-color: #0a0b10; color: #e2e8f0; }
+        
+        /* Hero Animation Setup */
+        .hero-belt { position: relative; height: 100px; display: flex; align-items: center; justify-content: center; }
+        .data-packet { transition: all 1s ease-in-out; position: absolute; }
+        
+        /* AES Machine Glow */
+        .machine-glow { animation: pulseGlow 2s infinite; }
+        @keyframes pulseGlow {
+            0%, 100% { box-shadow: 0 0 10px #00ff00, 0 0 20px rgba(0,255,0,0.2); }
+            50% { box-shadow: 0 0 25px #00e5ff, 0 0 40px rgba(0,229,255,0.5); border-color: #00e5ff; }
+        }
+
+        /* SubBytes Animation */
+        .subbytes-grid div { animation: colorSwap 3s infinite alternate; }
+        .subbytes-grid div:nth-child(2n) { animation-delay: 0.5s; }
+        .subbytes-grid div:nth-child(3n) { animation-delay: 1s; }
+        @keyframes colorSwap {
+            0%, 20% { background-color: #1f2937; color: #fff; } /* Gray */
+            80%, 100% { background-color: #00ff00; color: #000; } /* Neon */
+        }
+
+        /* ShiftRows Animation */
+        .shift-row { display: flex; gap: 4px; margin-bottom: 4px; overflow: hidden; }
+        .shift-cell { width: 32px; height: 32px; background-color: #1f2937; display: flex; align-items: center; justify-content: center; font-family: monospace; font-size: 12px;}
+        .row-1 { animation: none; }
+        .row-2 { animation: shiftLeft1 4s infinite ease-in-out; }
+        .row-3 { animation: shiftLeft2 4s infinite ease-in-out; }
+        .row-4 { animation: shiftLeft3 4s infinite ease-in-out; }
+        
+        @keyframes shiftLeft1 { 0%, 20% { transform: translateX(0); } 80%, 100% { transform: translateX(-36px); } }
+        @keyframes shiftLeft2 { 0%, 20% { transform: translateX(0); } 80%, 100% { transform: translateX(-72px); } }
+        @keyframes shiftLeft3 { 0%, 20% { transform: translateX(0); } 80%, 100% { transform: translateX(-108px); } }
+
+        /* MixColumns Animation */
+        .mix-column { transition: background 2s; animation: mixColor 4s infinite; }
+        .mix-column:nth-child(2) { animation-delay: 1s; }
+        .mix-column:nth-child(3) { animation-delay: 2s; }
+        @keyframes mixColor {
+            0%, 10% { background: linear-gradient(to bottom, #1f2937, #1f2937); }
+            50% { background: linear-gradient(to bottom, #00ff00, #00e5ff); }
+            90%, 100% { background: linear-gradient(to bottom, #1f2937, #1f2937); }
+        }
+
+        /* AddRoundKey Animation */
+        .ark-container { position: relative; width: 150px; height: 150px; }
+        .ark-block { position: absolute; top: 20px; width: 100px; height: 100px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px; }
+        .ark-data { left: 0; background-color: #3b82f6; opacity: 0.8; animation: slideRight 4s infinite; }
+        .ark-key { right: 0; background-color: #00ff00; opacity: 0.8; animation: slideLeft 4s infinite; }
+        .ark-cell { background-color: rgba(255,255,255,0.2); }
+        
+        @keyframes slideRight { 0%, 20% { transform: translateX(0); opacity: 0.8; } 50%, 80% { transform: translateX(25px); opacity: 0.5; } 100% { transform: translateX(0); opacity: 0.8; } }
+        @keyframes slideLeft { 0%, 20% { transform: translateX(0); opacity: 0.8; } 50%, 80% { transform: translateX(-25px); opacity: 0.5; } 100% { transform: translateX(0); opacity: 0.8; } }
+    </style>
+</head>
+<body class="font-sans antialiased selection:bg-neon selection:text-black">
+
+    <nav class="fixed w-full z-50 bg-darkbg/90 backdrop-blur-md border-b border-gray-800">
+        <div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="text-neon font-bold text-xl tracking-wider font-mono">
+                <i class="fa-solid fa-shield-halved mr-2"></i>AES_EXPLORER
+            </div>
+            <div class="space-x-6 hidden md:block text-sm">
+                <a href="#hero" class="hover:text-neon transition">Das Prinzip</a>
+                <a href="#basics" class="hover:text-cyber transition">Konzepte</a>
+                <a href="#deep-dive" class="hover:text-neon transition">Die 4 Schritte</a>
+            </div>
+        </div>
+    </nav>
+
+    <section id="hero" class="pt-32 pb-20 px-4 min-h-screen flex flex-col justify-center items-center text-center">
+        <h1 class="text-5xl md:text-7xl font-bold mb-6">
+            Sicherheit, <span class="text-transparent bg-clip-text bg-gradient-to-r from-neon to-cyber">kinderleicht</span> erklärt.
+        </h1>
+        <p class="text-xl md:text-2xl text-gray-400 max-w-3xl mx-auto mb-16">
+            Stell dir vor, du hast eine unzerstörbare, magische Kiste. Du legst deine Geheimnisse hinein, schließt sie mit einem einzigartigen Schlüssel ab, und sie verwandeln sich in unlesbaren Buchstabensalat. Nur wer denselben Schlüssel hat, kann das Geheimnis wieder entziffern. Das ist <strong>AES</strong>!
+        </p>
+
+        <!-- Interaktive Hero Animation -->
+        <div class="bg-cardbg border border-gray-800 rounded-2xl p-8 md:p-12 w-full max-w-4xl shadow-2xl relative overflow-hidden">
+            <h3 class="text-lg font-mono text-gray-500 mb-8 absolute top-4 left-6 uppercase">Die AES-Maschine</h3>
+            
+            <div class="hero-belt mt-8">
+                <!-- Eingabe -->
+                <div id="hero-in" class="data-packet font-mono text-2xl font-bold text-white bg-gray-700 px-6 py-3 rounded shadow-lg" style="left: -100px; opacity: 0;">
+                    HALLO
+                </div>
+                
+                <!-- Maschine -->
+                <div class="machine-glow z-10 w-40 h-40 border-2 border-neon rounded-xl bg-darkbg flex flex-col items-center justify-center relative">
+                    <i class="fa-solid fa-microchip text-4xl text-neon mb-2"></i>
+                    <span class="font-mono text-sm text-cyber font-bold">AES-256</span>
+                    <!-- Key Icon -->
+                    <i id="hero-key" class="fa-solid fa-key absolute -top-5 text-yellow-400 text-2xl transition-transform duration-500"></i>
+                </div>
+
+                <!-- Ausgabe -->
+                <div id="hero-out" class="data-packet font-mono text-2xl font-bold text-neon bg-gray-800 px-6 py-3 rounded shadow-lg border border-neon/50" style="right: -100px; opacity: 0;">
+                    X9#pQ!
+                </div>
+            </div>
+            
+            <p id="hero-status" class="mt-8 text-gray-400 font-mono text-sm h-6">Warte auf Daten...</p>
+        </div>
+    </section>
+
+    <section id="basics" class="py-20 px-4 bg-cardbg/50">
+        <div class="max-w-6xl mx-auto">
+            <h2 class="text-3xl md:text-5xl font-bold mb-12 text-center">Wie arbeitet der Magier?</h2>
+            
+            <div class="grid md:grid-cols-2 gap-8">
+                <!-- Karte 1: Blöcke -->
+                <div class="bg-darkbg border border-gray-800 rounded-xl p-8 hover:border-cyber transition duration-300">
+                    <div class="w-14 h-14 rounded-full bg-cyber/10 flex items-center justify-center mb-6">
+                        <i class="fa-solid fa-cubes text-2xl text-cyber"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold mb-4">Datenblöcke</h3>
+                    <p class="text-gray-400 leading-relaxed">
+                        AES schluckt nicht alles auf einmal. Es schneidet deine Nachricht in kleine, gleich große Stücke (genannt <strong>Blöcke</strong>). Jeder Block ist wie ein 4x4 Gitter aus Daten. Diese Stücke werden dann eins nach dem anderen verschlüsselt.
+                    </p>
+                </div>
+                
+                <!-- Karte 2: Runden -->
+                <div class="bg-darkbg border border-gray-800 rounded-xl p-8 hover:border-neon transition duration-300">
+                    <div class="w-14 h-14 rounded-full bg-neon/10 flex items-center justify-center mb-6">
+                        <i class="fa-solid fa-rotate text-2xl text-neon"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold mb-4">Wiederholung (Runden)</h3>
+                    <p class="text-gray-400 leading-relaxed">
+                        Um es Hackern extrem schwer zu machen, reicht nicht ein Durchgang. AES jagt die Daten durch eine Art "Waschmaschine" – und zwar mehrmals! Je nach Stärke deines Schlüssels dreht die Maschine <strong>10, 12 oder 14 Runden</strong>.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="deep-dive" class="py-20 px-4">
+        <div class="max-w-6xl mx-auto">
+            <h2 class="text-3xl md:text-5xl font-bold mb-4 text-center">Der Blick unter die Motorhaube</h2>
+            <p class="text-center text-gray-400 mb-16 max-w-2xl mx-auto">Was genau passiert in einer einzigen AES-Runde? Diese 4 Schritte werden immer und immer wieder ausgeführt.</p>
+            
+            <div class="grid md:grid-cols-2 gap-12">
+                
+                <!-- Schritt 1: SubBytes -->
+                <div class="bg-cardbg rounded-2xl p-8 border border-gray-800 flex flex-col justify-between">
+                    <div>
+                        <h3 class="text-2xl font-bold text-neon mb-2">1. Ersetzen (SubBytes)</h3>
+                        <p class="text-gray-400 text-sm mb-6">Jeder Teil des Datenblocks wird durch einen anderen, völlig neuen Wert ersetzt, basierend auf einer festen Tabelle. Wie beim Austauschen von Legosteinen!</p>
+                    </div>
+                    <div class="bg-darkbg p-6 rounded-xl flex justify-center items-center min-h-[200px]">
+                        <div class="grid grid-cols-4 gap-2 subbytes-grid w-32">
+                            <!-- 16 Kästchen -->
+                            <div class="w-6 h-6 rounded"></div><div class="w-6 h-6 rounded"></div><div class="w-6 h-6 rounded"></div><div class="w-6 h-6 rounded"></div>
+                            <div class="w-6 h-6 rounded"></div><div class="w-6 h-6 rounded"></div><div class="w-6 h-6 rounded"></div><div class="w-6 h-6 rounded"></div>
+                            <div class="w-6 h-6 rounded"></div><div class="w-6 h-6 rounded"></div><div class="w-6 h-6 rounded"></div><div class="w-6 h-6 rounded"></div>
+                            <div class="w-6 h-6 rounded"></div><div class="w-6 h-6 rounded"></div><div class="w-6 h-6 rounded"></div><div class="w-6 h-6 rounded"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Schritt 2: ShiftRows -->
+                <div class="bg-cardbg rounded-2xl p-8 border border-gray-800 flex flex-col justify-between">
+                    <div>
+                        <h3 class="text-2xl font-bold text-cyber mb-2">2. Verschieben (ShiftRows)</h3>
+                        <p class="text-gray-400 text-sm mb-6">Die Zeilen des 4x4 Gitters werden nach links geschoben. Zeile 1 bleibt. Zeile 2 schiebt sich um 1, Zeile 3 um 2 und Zeile 4 um 3 Plätze. Das reißt Muster auseinander.</p>
+                    </div>
+                    <div class="bg-darkbg p-6 rounded-xl flex justify-center items-center min-h-[200px]">
+                        <div class="w-40 border-l-2 border-r-2 border-gray-700 p-1">
+                            <div class="shift-row row-1"><div class="shift-cell rounded">1</div><div class="shift-cell rounded">2</div><div class="shift-cell rounded">3</div><div class="shift-cell rounded">4</div></div>
+                            <div class="shift-row row-2"><div class="shift-cell rounded">1</div><div class="shift-cell rounded">2</div><div class="shift-cell rounded">3</div><div class="shift-cell rounded">4</div><div class="shift-cell rounded text-gray-600">1</div></div>
+                            <div class="shift-row row-3"><div class="shift-cell rounded">1</div><div class="shift-cell rounded">2</div><div class="shift-cell rounded">3</div><div class="shift-cell rounded">4</div><div class="shift-cell rounded text-gray-600">1</div><div class="shift-cell rounded text-gray-600">2</div></div>
+                            <div class="shift-row row-4"><div class="shift-cell rounded">1</div><div class="shift-cell rounded">2</div><div class="shift-cell rounded">3</div><div class="shift-cell rounded">4</div><div class="shift-cell rounded text-gray-600">1</div><div class="shift-cell rounded text-gray-600">2</div><div class="shift-cell rounded text-gray-600">3</div></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Schritt 3: MixColumns -->
+                <div class="bg-cardbg rounded-2xl p-8 border border-gray-800 flex flex-col justify-between">
+                    <div>
+                        <h3 class="text-2xl font-bold text-purple-400 mb-2">3. Mischen (MixColumns)</h3>
+                        <p class="text-gray-400 text-sm mb-6">Jetzt wird mathematisch gerührt! Jede Spalte wird von oben nach unten so miteinander vermischt, dass jede Änderung an einem Byte den Rest der Spalte beeinflusst.</p>
+                    </div>
+                    <div class="bg-darkbg p-6 rounded-xl flex justify-center items-center min-h-[200px]">
+                        <div class="flex gap-2 h-32">
+                            <div class="w-8 rounded-full mix-column"></div>
+                            <div class="w-8 rounded-full mix-column"></div>
+                            <div class="w-8 rounded-full mix-column"></div>
+                            <div class="w-8 rounded-full mix-column"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Schritt 4: AddRoundKey -->
+                <div class="bg-cardbg rounded-2xl p-8 border border-gray-800 flex flex-col justify-between">
+                    <div>
+                        <h3 class="text-2xl font-bold text-yellow-400 mb-2">4. Schlüssel addieren</h3>
+                        <p class="text-gray-400 text-sm mb-6">Am Ende jeder Runde wird ein Teil deines geheimen Schlüssels (Round Key) mit dem Datenblock verschmolzen. Erst hier kommt das Passwort ins Spiel!</p>
+                    </div>
+                    <div class="bg-darkbg p-6 rounded-xl flex justify-center items-center min-h-[200px]">
+                        <div class="ark-container flex justify-center">
+                            <!-- Data Block -->
+                            <div class="ark-block ark-data rounded p-1">
+                                <div class="ark-cell rounded"></div><div class="ark-cell rounded"></div><div class="ark-cell rounded"></div><div class="ark-cell rounded"></div>
+                                <div class="ark-cell rounded"></div><div class="ark-cell rounded"></div><div class="ark-cell rounded"></div><div class="ark-cell rounded"></div>
+                                <div class="ark-cell rounded"></div><div class="ark-cell rounded"></div><div class="ark-cell rounded"></div><div class="ark-cell rounded"></div>
+                                <div class="ark-cell rounded"></div><div class="ark-cell rounded"></div><div class="ark-cell rounded"></div><div class="ark-cell rounded"></div>
+                            </div>
+                            <!-- Key Block -->
+                            <div class="ark-block ark-key rounded p-1">
+                                <div class="ark-cell rounded"></div><div class="ark-cell rounded"></div><div class="ark-cell rounded"></div><div class="ark-cell rounded"></div>
+                                <div class="ark-cell rounded"></div><div class="ark-cell rounded"></div><div class="ark-cell rounded"></div><div class="ark-cell rounded"></div>
+                                <div class="ark-cell rounded"></div><div class="ark-cell rounded"></div><div class="ark-cell rounded"></div><div class="ark-cell rounded"></div>
+                                <div class="ark-cell rounded"></div><div class="ark-cell rounded"></div><div class="ark-cell rounded"></div><div class="ark-cell rounded"></div>
+                            </div>
+                            <!-- Center Plus Icon -->
+                            <div class="absolute inset-0 flex justify-center items-center z-10 pointer-events-none">
+                                <i class="fa-solid fa-plus text-2xl text-white opacity-50"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-cardbg py-8 border-t border-gray-800 text-center text-gray-500 text-sm mt-12">
+        <p>&copy; 2026 AES Explorer - Kryptographie einfach erklärt.</p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const input = document.getElementById('hero-in');
+            const output = document.getElementById('hero-out');
+            const status = document.getElementById('hero-status');
+            const key = document.getElementById('hero-key');
+
+            const steps = [
+                () => { // Schritt 1: Hallo fährt ein
+                    input.style.left = '20px';
+                    input.style.opacity = '1';
+                    output.style.right = '-100px';
+                    output.style.opacity = '0';
+                    status.innerText = 'Lese klare Daten ein...';
+                    key.style.transform = 'rotate(0deg)';
+                },
+                () => { // Schritt 2: In der Maschine
+                    input.style.left = '50%';
+                    input.style.transform = 'translateX(-50%)';
+                    input.style.opacity = '0'; // Verschwindet in Maschine
+                    status.innerText = 'Verschlüsselung läuft (AES aktiv)...';
+                    key.style.transform = 'rotate(180deg) scale(1.2)'; // Schlüssel dreht sich
+                },
+                () => { // Schritt 3: Geheime Daten kommen raus
+                    output.style.right = '50%';
+                    output.style.transform = 'translateX(50%)';
+                    setTimeout(() => {
+                        output.style.transform = 'translateX(0)';
+                        output.style.right = '20px';
+                        output.style.opacity = '1';
+                        status.innerText = 'Erfolgreich verschlüsselt!';
+                    }, 100);
+                },
+                () => { // Reset
+                    output.style.right = '-200px';
+                    output.style.opacity = '0';
+                    input.style.left = '-200px';
+                    input.style.transform = 'translateX(0)';
+                    key.style.transform = 'rotate(0deg) scale(1)';
+                    status.innerText = 'Bereit.';
+                }
+            ];
+
+            let currentStep = 0;
+            
+            // Endlos-Schleife für die Hero-Animation
+            setInterval(() => {
+                steps[currentStep]();
+                currentStep = (currentStep + 1) % steps.length;
+            }, 2500); // Alle 2.5 Sekunden nächster Schritt
+            
+            // Ersten Schritt sofort triggern
+            steps[0]();
+        });
+    </script>
+</body>
+</html>
