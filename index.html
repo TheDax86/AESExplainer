@@ -74,15 +74,41 @@
             90%, 100% { background: linear-gradient(to bottom, #1f2937, #1f2937); }
         }
 
-        /* AddRoundKey Animation */
-        .ark-container { position: relative; width: 150px; height: 150px; }
-        .ark-block { position: absolute; top: 20px; width: 100px; height: 100px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px; }
-        .ark-data { left: 0; background-color: #3b82f6; opacity: 0.8; animation: slideRight 4s infinite; }
-        .ark-key { right: 0; background-color: #00ff00; opacity: 0.8; animation: slideLeft 4s infinite; }
-        .ark-cell { background-color: rgba(255,255,255,0.2); }
+        /* NEW: S-Box Animation */
+        .sbox-scene { position: relative; width: 220px; height: 100px; display: flex; align-items: center; justify-content: center; }
+        .sbox-box { z-index: 10; background: #1f2937; border: 2px solid #00ff00; padding: 10px 15px; border-radius: 8px; font-weight: bold; box-shadow: 0 0 10px rgba(0,255,0,0.2); }
+        .sbox-byte { position: absolute; font-family: monospace; padding: 6px 10px; border-radius: 4px; font-weight: bold; font-size: 1.2rem; }
+        .sbox-in { left: 0; background: #3b82f6; color: white; animation: slideInBox 3s infinite; }
+        .sbox-out { right: 0; background: #8b5cf6; color: white; animation: slideOutBox 3s infinite; opacity: 0; }
+
+        @keyframes slideInBox {
+            0%, 10% { left: 0px; opacity: 1; transform: scale(1); }
+            40% { left: 75px; opacity: 1; transform: scale(0.3); }
+            41%, 100% { opacity: 0; }
+        }
+        @keyframes slideOutBox {
+            0%, 40% { right: 75px; opacity: 0; transform: scale(0.3); }
+            41% { opacity: 1; }
+            70%, 90% { right: 0px; opacity: 1; transform: scale(1); }
+            100% { right: 0px; opacity: 0; }
+        }
+
+        /* NEW: XOR Animation */
+        .xor-scene { font-family: monospace; font-size: 1.5rem; display: flex; flex-direction: column; align-items: center; }
+        .xor-row { display: flex; gap: 15px; margin-bottom: 8px; width: 100%; justify-content: center; }
+        .xor-label { font-size: 1rem; width: 60px; text-align: right; margin-right: 10px; opacity: 0.7; }
+        .xor-bit { width: 24px; text-align: center; }
+        .xor-result-row { border-top: 2px dashed #4b5563; padding-top: 8px; margin-top: 4px; color: #fbbf24; }
         
-        @keyframes slideRight { 0%, 20% { transform: translateX(0); opacity: 0.8; } 50%, 80% { transform: translateX(25px); opacity: 0.5; } 100% { transform: translateX(0); opacity: 0.8; } }
-        @keyframes slideLeft { 0%, 20% { transform: translateX(0); opacity: 0.8; } 50%, 80% { transform: translateX(-25px); opacity: 0.5; } 100% { transform: translateX(0); opacity: 0.8; } }
+        .xor-anim-col { display: flex; flex-direction: column; align-items: center; animation: xorHighlight 4s infinite; opacity: 0.3; }
+        .xor-anim-col:nth-child(2) { animation-delay: 1s; }
+        .xor-anim-col:nth-child(3) { animation-delay: 2s; }
+        .xor-anim-col:nth-child(4) { animation-delay: 3s; }
+
+        @keyframes xorHighlight {
+            0%, 100% { opacity: 0.3; text-shadow: none; transform: scale(1); }
+            10%, 30% { opacity: 1; text-shadow: 0 0 10px currentColor; transform: scale(1.1); }
+        }
     </style>
 </head>
 <body class="font-sans antialiased selection:bg-neon selection:text-black">
@@ -177,15 +203,15 @@
                 <div class="bg-cardbg rounded-2xl p-8 border border-gray-800 flex flex-col justify-between">
                     <div>
                         <h3 class="text-2xl font-bold text-neon mb-2">1. Ersetzen (SubBytes)</h3>
-                        <p class="text-gray-400 text-sm mb-6">Jeder Teil des Datenblocks wird durch einen anderen, völlig neuen Wert ersetzt, basierend auf einer festen Tabelle. Wie beim Austauschen von Legosteinen!</p>
+                        <p class="text-gray-400 text-sm mb-6">
+                            Jeder Daten-Schnipsel wird durch einen völlig neuen Wert ersetzt. Dafür nutzt AES eine feste Übersetzungstabelle, die sogenannte <strong>S-Box</strong> (Substitution Box). Stell es dir wie ein Geheimcode-Buch vor: Du schlägst 'A1' nach und das Buch sagt dir, du sollst stattdessen 'F9' verwenden.
+                        </p>
                     </div>
-                    <div class="bg-darkbg p-6 rounded-xl flex justify-center items-center min-h-[200px]">
-                        <div class="grid grid-cols-4 gap-2 subbytes-grid w-32">
-                            <!-- 16 Kästchen -->
-                            <div class="w-6 h-6 rounded"></div><div class="w-6 h-6 rounded"></div><div class="w-6 h-6 rounded"></div><div class="w-6 h-6 rounded"></div>
-                            <div class="w-6 h-6 rounded"></div><div class="w-6 h-6 rounded"></div><div class="w-6 h-6 rounded"></div><div class="w-6 h-6 rounded"></div>
-                            <div class="w-6 h-6 rounded"></div><div class="w-6 h-6 rounded"></div><div class="w-6 h-6 rounded"></div><div class="w-6 h-6 rounded"></div>
-                            <div class="w-6 h-6 rounded"></div><div class="w-6 h-6 rounded"></div><div class="w-6 h-6 rounded"></div><div class="w-6 h-6 rounded"></div>
+                    <div class="bg-darkbg p-6 rounded-xl flex justify-center items-center min-h-[200px] overflow-hidden">
+                        <div class="sbox-scene">
+                            <div class="sbox-byte sbox-in shadow-[0_0_15px_#3b82f6]">A1</div>
+                            <div class="sbox-box text-neon">S-Box</div>
+                            <div class="sbox-byte sbox-out shadow-[0_0_15px_#8b5cf6]">F9</div>
                         </div>
                     </div>
                 </div>
@@ -225,29 +251,46 @@
                 <!-- Schritt 4: AddRoundKey -->
                 <div class="bg-cardbg rounded-2xl p-8 border border-gray-800 flex flex-col justify-between">
                     <div>
-                        <h3 class="text-2xl font-bold text-yellow-400 mb-2">4. Schlüssel addieren</h3>
-                        <p class="text-gray-400 text-sm mb-6">Am Ende jeder Runde wird ein Teil deines geheimen Schlüssels (Round Key) mit dem Datenblock verschmolzen. Erst hier kommt das Passwort ins Spiel!</p>
+                        <h3 class="text-2xl font-bold text-yellow-400 mb-2">4. Schlüssel addieren (XOR)</h3>
+                        <p class="text-gray-400 text-sm mb-6">
+                            Hier kommt dein Passwort ins Spiel! Der Datenblock wird mit dem aktuellen Rundenschlüssel verschmolzen. Das passiert über eine <strong>XOR</strong> (Exklusives ODER) Verknüpfung. 
+                            Die Regel ist simpel: <em class="text-gray-300">Sind zwei Bits gleich (0 und 0, oder 1 und 1), ist das Ergebnis 0. Sind sie unterschiedlich (1 und 0), ist es 1.</em>
+                        </p>
                     </div>
                     <div class="bg-darkbg p-6 rounded-xl flex justify-center items-center min-h-[200px]">
-                        <div class="ark-container flex justify-center">
-                            <!-- Data Block -->
-                            <div class="ark-block ark-data rounded p-1">
-                                <div class="ark-cell rounded"></div><div class="ark-cell rounded"></div><div class="ark-cell rounded"></div><div class="ark-cell rounded"></div>
-                                <div class="ark-cell rounded"></div><div class="ark-cell rounded"></div><div class="ark-cell rounded"></div><div class="ark-cell rounded"></div>
-                                <div class="ark-cell rounded"></div><div class="ark-cell rounded"></div><div class="ark-cell rounded"></div><div class="ark-cell rounded"></div>
-                                <div class="ark-cell rounded"></div><div class="ark-cell rounded"></div><div class="ark-cell rounded"></div><div class="ark-cell rounded"></div>
+                        <div class="xor-scene w-full">
+                            
+                            <div class="flex w-full justify-center">
+                                <div class="xor-label text-blue-400 font-sans font-bold">Daten</div>
+                                <div class="flex gap-4">
+                                    <div class="xor-anim-col"><div class="text-blue-400">1</div></div>
+                                    <div class="xor-anim-col"><div class="text-blue-400">0</div></div>
+                                    <div class="xor-anim-col"><div class="text-blue-400">1</div></div>
+                                    <div class="xor-anim-col"><div class="text-blue-400">1</div></div>
+                                </div>
                             </div>
-                            <!-- Key Block -->
-                            <div class="ark-block ark-key rounded p-1">
-                                <div class="ark-cell rounded"></div><div class="ark-cell rounded"></div><div class="ark-cell rounded"></div><div class="ark-cell rounded"></div>
-                                <div class="ark-cell rounded"></div><div class="ark-cell rounded"></div><div class="ark-cell rounded"></div><div class="ark-cell rounded"></div>
-                                <div class="ark-cell rounded"></div><div class="ark-cell rounded"></div><div class="ark-cell rounded"></div><div class="ark-cell rounded"></div>
-                                <div class="ark-cell rounded"></div><div class="ark-cell rounded"></div><div class="ark-cell rounded"></div><div class="ark-cell rounded"></div>
+
+                            <div class="flex w-full justify-center mt-2">
+                                <div class="xor-label text-green-400 font-sans font-bold">Key</div>
+                                <div class="flex gap-4">
+                                    <div class="xor-anim-col"><div class="text-green-400">0</div></div>
+                                    <div class="xor-anim-col"><div class="text-green-400">1</div></div>
+                                    <div class="xor-anim-col"><div class="text-green-400">1</div></div>
+                                    <div class="xor-anim-col"><div class="text-green-400">0</div></div>
+                                </div>
                             </div>
-                            <!-- Center Plus Icon -->
-                            <div class="absolute inset-0 flex justify-center items-center z-10 pointer-events-none">
-                                <i class="fa-solid fa-plus text-2xl text-white opacity-50"></i>
+
+                            <div class="flex w-full justify-center xor-result-row">
+                                <div class="xor-label text-yellow-400 font-sans font-bold">XOR</div>
+                                <div class="flex gap-4 relative">
+                                    <i class="fa-solid fa-plus absolute -left-8 top-1 text-sm text-gray-500"></i>
+                                    <div class="xor-anim-col"><div class="text-yellow-400 font-bold">1</div></div>
+                                    <div class="xor-anim-col"><div class="text-yellow-400 font-bold">1</div></div>
+                                    <div class="xor-anim-col"><div class="text-yellow-400 font-bold">0</div></div>
+                                    <div class="xor-anim-col"><div class="text-yellow-400 font-bold">1</div></div>
+                                </div>
                             </div>
+
                         </div>
                     </div>
                 </div>
